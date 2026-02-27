@@ -1,11 +1,11 @@
 # vlist-solidjs
 
-SolidJS primitives for [vlist](https://github.com/floor/vlist) - a lightweight, high-performance virtual list.
+SolidJS primitives for [@floor/vlist](https://github.com/floor/vlist) — lightweight, zero-dependency virtual scrolling.
 
-## Installation
+## Install
 
 ```bash
-npm install vlist-solidjs @floor/vlist
+npm install @floor/vlist vlist-solidjs
 ```
 
 ## Quick Start
@@ -13,70 +13,36 @@ npm install vlist-solidjs @floor/vlist
 ```tsx
 import { createVList } from 'vlist-solidjs';
 import { createSignal } from 'solid-js';
+import '@floor/vlist/styles';
 
-function MyList() {
-  const [items] = createSignal(
-    Array.from({ length: 10000 }, (_, i) => ({
-      id: i,
-      name: `Item ${i}`
-    }))
+function UserList() {
+  const [users] = createSignal(
+    Array.from({ length: 10000 }, (_, i) => ({ id: i, name: `User ${i + 1}` }))
   );
 
   const { setRef, instance } = createVList(() => ({
-    items: items(),
+    items: users(),
     item: {
       height: 48,
-      template: (item) => `<div>${item.name}</div>`
-    }
+      template: (user) => `<div>${user.name}</div>`,
+    },
   }));
 
-  return <div ref={setRef} />;
+  return <div ref={setRef} style={{ height: '400px' }} />;
 }
 ```
 
 ## API
 
-### `createVList(config)`
+- **`createVList(config)`** — Creates a virtual list. Config is an accessor returning the vlist config. Returns `{ setRef, instance }`.
+- **`createVListEvent(instance, event, handler)`** — Subscribe to vlist events with automatic cleanup.
 
-Creates a virtual list instance.
+Config accepts all [@floor/vlist options](https://vlist.dev/docs/api/reference) minus `container` (handled by the ref). Feature fields like `adapter`, `grid`, `groups`, `selection`, and `scrollbar` are translated into `.use(withX())` calls automatically.
 
-**Parameters:**
-- `config` - An accessor returning the vlist configuration (without container)
+## Documentation
 
-**Returns:**
-- `setRef` - Ref callback to attach to the container element
-- `instance` - Accessor to the vlist instance
-
-### `createVListEvent(instance, event, handler)`
-
-Subscribe to vlist events.
-
-**Parameters:**
-- `instance` - The vlist instance accessor
-- `event` - Event name
-- `handler` - Event handler function
-
-**Example:**
-```tsx
-import { createVListEvent } from 'vlist-solidjs';
-
-createVListEvent(instance, 'item:click', ({ item, index }) => {
-  console.log('Clicked:', item, 'at index:', index);
-});
-```
-
-## Features
-
-All vlist features are supported:
-
-- **Selection** - Single and multiple selection modes
-- **Grid layout** - Multi-column grid virtualization
-- **Sections** - Grouped lists with sticky headers
-- **Infinite scroll** - Async data loading
-- **Horizontal** - Horizontal scrolling support
-- **Scale** - Handle 1M+ items with compression
-- **Scrollbar** - Custom scrollbar with auto-hide
+Full usage guide, feature config examples, and TypeScript types: **[Framework Adapters — SolidJS](https://vlist.dev/docs/frameworks#solidjs)**
 
 ## License
 
-MIT © Floor IO
+MIT © [Floor IO](https://floor.io)
