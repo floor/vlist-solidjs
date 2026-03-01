@@ -12,11 +12,11 @@ import type {
   EventHandler,
   Unsubscribe,
 } from "@floor/vlist";
-import { vlist, type BuiltVList } from "@floor/vlist";
+import { vlist, type VList } from "@floor/vlist";
 import {
   withAsync,
   withGrid,
-  withSections,
+  withGroups,
   withSelection,
   withScrollbar,
   withScale,
@@ -31,20 +31,20 @@ export type UseVListConfig<T extends VListItem = VListItem> = Omit<
 
 export interface CreateVListReturn<T extends VListItem = VListItem> {
   setRef: (el: HTMLDivElement) => void;
-  instance: Accessor<BuiltVList<T> | null>;
+  instance: Accessor<VList<T> | null>;
 }
 
 export function createVList<T extends VListItem = VListItem>(
   config: Accessor<UseVListConfig<T>>,
 ): CreateVListReturn<T> {
   let containerEl: HTMLDivElement | null = null;
-  let instanceRef: BuiltVList<T> | null = null;
+  let instanceRef: VList<T> | null = null;
 
   const setRef = (el: HTMLDivElement) => {
     containerEl = el;
   };
 
-  const instance = (): BuiltVList<T> | null => instanceRef;
+  const instance = (): VList<T> | null => instanceRef;
 
   onMount(() => {
     if (!containerEl) return;
@@ -82,7 +82,7 @@ export function createVList<T extends VListItem = VListItem>(
           : groupsConfig.headerHeight;
 
       builder = builder.use(
-        withSections({
+        withGroups({
           getGroupForIndex: groupsConfig.getGroupForIndex,
           headerHeight,
           headerTemplate: groupsConfig.headerTemplate,
@@ -144,7 +144,7 @@ export function createVListEvent<
   T extends VListItem,
   K extends keyof VListEvents<T>,
 >(
-  instance: Accessor<BuiltVList<T> | null>,
+  instance: Accessor<VList<T> | null>,
   event: K,
   handler: EventHandler<VListEvents<T>[K]>,
 ): void {
