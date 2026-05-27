@@ -17,7 +17,7 @@ import {
   createVList as createVListCore,
   page,
   autosize,
-  async as asyncPlugin,
+  data as dataPlugin,
   grid,
   masonry,
   groups,
@@ -85,7 +85,7 @@ export function createVList<T extends VListItem = VListItem>(
 
     if (currentConfig.adapter) {
       plugins.push(
-        asyncPlugin({
+        dataPlugin({
           adapter: currentConfig.adapter,
           ...(currentConfig.loading && { loading: currentConfig.loading }),
         }),
