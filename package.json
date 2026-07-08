@@ -1,6 +1,6 @@
 {
   "name": "vlist-solidjs",
-  "version": "2.0.0",
+  "version": "2.6.0",
   "description": "SolidJS primitives for vlist - lightweight virtual scrolling",
   "author": {
     "name": "Floor IO",
@@ -33,7 +33,7 @@
     "./package.json": "./package.json"
   },
   "peerDependencies": {
-    "vlist": "^2.0.0",
+    "vlist": "^2.6.0",
     "solid-js": ">=1.0.0"
   },
   "files": [
@@ -44,11 +44,13 @@
   "scripts": {
     "build": "bun run build.ts",
     "dev": "bun run build.ts --watch",
+    "test": "bun test --conditions browser",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "bun run build"
   },
   "devDependencies": {
     "vlist": "file:../vlist",
+    "@happy-dom/global-registrator": "^20.9.0",
     "@types/bun": "^1.0.0",
     "bun": "^1.0.0",
     "solid-js": "^1.9.3",
