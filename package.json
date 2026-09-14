@@ -33,7 +33,7 @@
     "./package.json": "./package.json"
   },
   "peerDependencies": {
-    "vlist": "^2.6.0",
+    "vlist": "^2.8.0",
     "solid-js": ">=1.0.0"
   },
   "files": [
