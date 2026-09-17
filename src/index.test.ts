@@ -14,7 +14,7 @@ import type { VListFactory } from "./index";
 // that solid-js/web captures a live `document` at import time.
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { render } from "solid-js/web";
-import { createVList } from "./index";
+import { createVList, type CreateVListReturn } from "./index";
 import { grid, autosize, type VListItem } from "vlist";
 import type { UseVListConfig } from "./index";
 
@@ -36,7 +36,9 @@ function installLayoutShims(): () => void {
     private cb: ResizeObserverCallback;
     constructor(cb: ResizeObserverCallback) { this.cb = cb; }
     observe(target: Element): void {
-      this.cb([{ target, contentRect: { width: VIEWPORT_W, height: VIEWPORT_H } as DOMRectReadOnly } as ResizeObserverEntry], this as unknown as ResizeObserver);
+      this.cb([{ target, contentRect: { width: VIEWPORT_W, height: VIEWPORT_H } as DOMRectReadOnly,
+            borderBoxSize: [{ inlineSize: VIEWPORT_W, blockSize: VIEWPORT_H }],
+            contentBoxSize: [{ inlineSize: VIEWPORT_W, blockSize: VIEWPORT_H }] } as unknown as ResizeObserverEntry], this as unknown as ResizeObserver);
     }
     unobserve(): void {}
     disconnect(): void {}
@@ -61,10 +63,10 @@ const flush = (): Promise<void> => new Promise((r) => setTimeout(r, 5));
 async function mount(config: UseVListConfig<Row>) {
   const host = document.createElement("div");
   document.body.appendChild(host);
-  let api!: ReturnType<typeof createVList<Row>>;
+  let api!: CreateVListReturn<UseVListConfig<Row>>;
   const dispose = render(() => {
     const div = document.createElement("div") as HTMLDivElement;
-    api = createVList<Row>(() => config);
+    api = createVList(() => config);
     api.setRef(div);
     return div;
   }, host);
@@ -92,9 +94,12 @@ describe("createVList — render", () => {
 
   it("#119: accepts and runs a plugins array overlapping auto-wiring", async () => {
     const { container, instance, dispose } = await mount({
+      // estimatedHeight auto-wires autosize(); the user passes autosize() too —
+      // one plugin, not a duplicate. (grid + autosize, the 2.x form of this
+      // test, is a declared conflict in 3.0.)
       item: { estimatedHeight: 200, template },
       items: rows(200),
-      plugins: [grid({ columns: 3 }), autosize()],
+      plugins: [autosize()],
     });
     expect(instance()).not.toBeNull();
     expect(container.querySelectorAll(".row").length).toBeGreaterThan(0);
@@ -112,11 +117,12 @@ it("forwards a typed synthetic factory and creates the synthetic driver", async 
     return createSynthetic(config, plugins);
   };
   const { container, dispose } = await mount({
-    factory, scroll: { mode: "synthetic" }, items: rows(100), item: { height: 40, template },
+    factory, items: rows(100), item: { height: 40, template },
   });
   try {
     expect(calls).toBe(1);
     expect(container.querySelector<HTMLElement>(".vlist-viewport")!.style.touchAction).toBe("pan-x pinch-zoom");
-    expect(pluginNames).toEqual(["selection", "scale", "scrollbar", "snapshots"]);
+    // 3.0 wires only what the config asks for: no feature fields, no plugins.
+    expect(pluginNames).toEqual([]);
   } finally { const host = container.parentElement; dispose(); host?.remove(); }
 });

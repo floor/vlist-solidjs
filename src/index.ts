@@ -12,7 +12,7 @@ import type {
   Unsubscribe,
 } from "vlist";
 import type { VList } from "vlist";
-import { createVListFromConfig, type VListConfig } from "vlist/config";
+import { createVListFromConfig, type VListConfig, type ConfigItem, type ConfigMethods } from "vlist/config";
 
 // Re-export types that appear in UseVListConfig / CreateVListReturn
 export type {
@@ -26,7 +26,7 @@ export type {
   Unsubscribe,
   VListPlugin,
 } from "vlist";
-export type { VListConfig, VListFactory } from "vlist/config";
+export type { VListConfig, VListFactory, ConfigItem, ConfigMethods } from "vlist/config";
 
 /**
  * Configuration for {@link createVList}. vlist's high-level `VListConfig`
@@ -36,29 +36,42 @@ export type { VListConfig, VListFactory } from "vlist/config";
  */
 export type UseVListConfig<T extends VListItem = VListItem> = VListConfig<T>;
 
-export interface CreateVListReturn<T extends VListItem = VListItem> {
+/**
+ * The list a config builds: its item type read from `items` or the template,
+ * and the methods its feature fields wire — `selection` brings `select()`,
+ * `adapter` brings `reload()`, `layout: "grid"` brings `getGridLayout()`.
+ */
+export type CreateVListInstance<C extends UseVListConfig<any>> =
+  VList<ConfigItem<C>> & ConfigMethods<ConfigItem<C>, C>;
+
+export interface CreateVListReturn<C extends UseVListConfig<any>> {
   setRef: (el: HTMLDivElement) => void;
-  instance: Accessor<VList<T> | null>;
+  instance: Accessor<CreateVListInstance<C> | null>;
 }
 
-export function createVList<T extends VListItem = VListItem>(
-  config: Accessor<UseVListConfig<T>>,
-): CreateVListReturn<T> {
+/**
+ * One type parameter, the config itself, inferred from the accessor's return.
+ * Do not pass a type argument: the item type comes from `items` or
+ * `item.template`, and the plugin methods from the feature fields.
+ */
+export function createVList<const C extends UseVListConfig<any>>(
+  config: Accessor<C>,
+): CreateVListReturn<C> {
   let containerEl: HTMLDivElement | null = null;
-  let instanceRef: VList<T> | null = null;
+  let instanceRef: CreateVListInstance<C> | null = null;
 
   const setRef = (el: HTMLDivElement) => {
     containerEl = el;
   };
 
-  const instance = (): VList<T> | null => instanceRef;
+  const instance = (): CreateVListInstance<C> | null => instanceRef;
 
   onMount(() => {
     if (!containerEl) return;
 
     const currentConfig = config();
 
-    instanceRef = createVListFromConfig<T>({ ...currentConfig, container: containerEl });
+    instanceRef = createVListFromConfig({ ...currentConfig, container: containerEl }) as CreateVListInstance<C>;
   });
 
   // React to items changes
