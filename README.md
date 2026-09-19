@@ -1,11 +1,11 @@
 # vlist-solidjs
 
-SolidJS primitives for [@floor/vlist](https://github.com/floor/vlist) — lightweight, zero-dependency virtual scrolling.
+SolidJS primitives for [vlist](https://github.com/floor/vlist) — lightweight, zero-dependency virtual scrolling.
 
 ## Install
 
 ```bash
-npm install @floor/vlist vlist-solidjs
+npm install vlist vlist-solidjs
 ```
 
 ## Quick Start
@@ -13,7 +13,7 @@ npm install @floor/vlist vlist-solidjs
 ```tsx
 import { createVList } from 'vlist-solidjs';
 import { createSignal } from 'solid-js';
-import '@floor/vlist/styles';
+import 'vlist/styles';
 
 function UserList() {
   const [users] = createSignal(
@@ -37,7 +37,7 @@ function UserList() {
 - **`createVList(config)`** — Creates a virtual list. Config is an accessor returning the vlist config. Returns `{ setRef, instance }`.
 - **`createVListEvent(instance, event, handler)`** — Subscribe to vlist events with automatic cleanup.
 
-Config accepts all [@floor/vlist options](https://vlist.dev/docs/api/reference) minus `container` (handled by the ref). Feature fields like `adapter`, `grid`, `groups`, `selection`, `scrollbar`, and `estimatedHeight` are translated into `.use(withX())` calls automatically.
+Config accepts all [vlist options](https://vlist.dev/docs/api/reference) minus `container` (handled by the ref). Feature fields like `adapter`, `grid`, `groups`, `selection`, `scrollbar`, and `estimatedHeight` are resolved into plugins automatically.
 
 ## Documentation
 
