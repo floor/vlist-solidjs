@@ -58,7 +58,10 @@ export function createVList<T extends VListItem = VListItem>(
 
     const currentConfig = config();
 
-    instanceRef = createVListFromConfig<T>({ ...currentConfig, container: containerEl });
+    // No type argument: vlist 3 takes two (the item and the config, so the
+    // instance carries the methods the config's feature fields imply), and
+    // both are inferred from the argument.
+    instanceRef = createVListFromConfig({ ...currentConfig, container: containerEl });
   });
 
   // React to items changes
