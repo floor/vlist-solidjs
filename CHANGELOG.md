@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [3.1.0-next.3] - 2026-10-01
+
+### Deprecated
+
+- This package. Use `vlist/solid` from the `vlist` package: change the import path, and pass
+  features as plugins (`createVList(() => ({ items, item }), [selection({ mode: "single" })])`, with `selection` from `vlist`).
+
+### Changed
+
+- Built on `vlist/solid`: the exports are `vlist/solid`'s, building the list with
+  `createVListFromConfig`, so the config-based API, its feature fields and its return values are
+  unchanged. `peerDependencies.vlist` is `^3.1.0-next.3`, the first vlist with the entry; on vlist
+  3.0.x, stay on vlist-solidjs 3.0.x. Tests run against `vlist@3.1.0-next.3`.
+
 ## [3.1.0-next.2] - 2026-09-28
 
 ### Changed
