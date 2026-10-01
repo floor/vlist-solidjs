@@ -14,7 +14,8 @@ import type { VListFactory } from "./index";
 // that solid-js/web captures a live `document` at import time.
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { render } from "solid-js/web";
-import { createVList } from "./index";
+import { createSignal } from "solid-js";
+import { createVList, createVListEvent } from "./index";
 import { autosize, selection, type VListItem } from "vlist";
 import type { UseVListConfig } from "./index";
 
@@ -145,4 +146,48 @@ it("forwards scroll.mode: the list goes synthetic and draws its scrollbar", asyn
     expect(viewport.style.touchAction).toBe("pan-x pinch-zoom");
     expect(container.parentElement!.querySelectorAll(".vlist-scrollbar")).toHaveLength(1);
   } finally { const host = container.parentElement; dispose(); host?.remove(); }
+});
+
+describe("3.1 compat: the config API on vlist/solid", () => {
+  it("resolves a feature field to its plugin", async () => {
+    const { instance, dispose } = await mount({ item: { height: 40, template }, items: rows(10), selection: { mode: "single" } });
+    const list = instance() as unknown as { select(id: string): void; getSelected(): unknown[] };
+    list.select("row-2");
+    expect(list.getSelected()).toEqual(["row-2"]);
+    dispose();
+  });
+
+  it("updates the list when the accessor's items change", async () => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const [items, setItems] = createSignal(rows(3));
+    const dispose = render(() => {
+      const div = document.createElement("div") as HTMLDivElement;
+      createVList<Row>(() => ({ item: { height: 40, template }, items: items() })).setRef(div);
+      return div;
+    }, host);
+    await flush();
+    expect(host.querySelectorAll(".row").length).toBe(3);
+    setItems(rows(5));
+    await flush();
+    expect(host.querySelectorAll(".row").length).toBe(5);
+    dispose();
+  });
+
+  it("createVListEvent receives the list's events", async () => {
+    const clicked: string[] = [];
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const dispose = render(() => {
+      const div = document.createElement("div") as HTMLDivElement;
+      const api = createVList<Row>(() => ({ item: { height: 40, template }, items: rows(10) }));
+      api.setRef(div);
+      createVListEvent(api.instance, "item:click", ({ item }) => { clicked.push(item.id); });
+      return div;
+    }, host);
+    await flush();
+    host.querySelector<HTMLElement>('[data-index="2"]')!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(clicked).toEqual(["row-2"]);
+    dispose();
+  });
 });
