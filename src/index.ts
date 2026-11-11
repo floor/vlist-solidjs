@@ -10,8 +10,15 @@
  */
 
 import type { Accessor } from "solid-js";
-import type { VListItem, VList } from "vlist";
-import { createVListFromConfig, type VListConfig } from "vlist/config";
+import type {
+  VListItem,
+  VList,
+  VListPlugin,
+  TableMethods,
+  ColumnPinMethods,
+  ColumnReorderMethods,
+} from "vlist";
+import { createVListFromConfig, type VListConfig, type ConfigMethods } from "vlist/config";
 import { createVList as createEntry, createVListEvent } from "vlist/solid";
 
 export { createVListEvent };
@@ -27,8 +34,17 @@ export type {
   EventHandler,
   Unsubscribe,
   VListPlugin,
+  TableColumn,
+  TablePluginConfig,
+  TableMethods,
+  TableFeature,
+  TableFeatureMethods,
+  ColumnPinConfig,
+  ColumnPinMethods,
+  ColumnReorderConfig,
+  ColumnReorderMethods,
 } from "vlist";
-export type { VListConfig, VListFactory } from "vlist/config";
+export type { VListConfig, VListFactory, ConfigMethods } from "vlist/config";
 
 /**
  * Configuration for {@link createVList}. vlist's high-level `VListConfig`
@@ -38,16 +54,54 @@ export type { VListConfig, VListFactory } from "vlist/config";
  */
 export type UseVListConfig<T extends VListItem = VListItem> = VListConfig<T>;
 
-export interface CreateVListReturn<T extends VListItem = VListItem> {
+type InstanceMethods<T extends VListItem, M> = M extends UseVListConfig<T> ? ConfigMethods<T, M> : M;
+
+export interface CreateVListReturn<
+  T extends VListItem = VListItem,
+  M = {},
+> {
   setRef: (el: HTMLDivElement) => void;
-  instance: Accessor<VList<T> | null>;
+  instance: Accessor<(VList<T> & InstanceMethods<T, M>) | null>;
 }
+
+type WithPlugin<T extends VListItem, M> = Omit<UseVListConfig<T>, "plugins"> & {
+  plugins:
+    | readonly [VListPlugin<T, M>, ...(readonly VListPlugin<T, unknown>[])]
+    | readonly [...(readonly VListPlugin<T, unknown>[]), VListPlugin<T, M>];
+};
 
 /** `vlist/solid`'s factory argument: builds from the whole config. */
 const fromConfig = createVListFromConfig as unknown as Parameters<typeof createEntry>[2];
 
+export function createVList<
+  T extends VListItem,
+  const C extends UseVListConfig<NoInfer<T>> & { items: readonly T[] },
+>(
+  config: Accessor<{ items: readonly T[] } & UseVListConfig<NoInfer<T>> & C>,
+): CreateVListReturn<T, ConfigMethods<T, C>>;
+export function createVList<
+  T extends VListItem,
+  const C extends UseVListConfig<T>,
+>(
+  config: Accessor<UseVListConfig<T> & C>,
+): CreateVListReturn<T, ConfigMethods<T, C>>;
+export function createVList<T extends VListItem = VListItem>(
+  config: Accessor<WithPlugin<T, TableMethods<T> & ColumnPinMethods & ColumnReorderMethods>>,
+): CreateVListReturn<T, TableMethods<T> & ColumnPinMethods & ColumnReorderMethods>;
+export function createVList<T extends VListItem = VListItem>(
+  config: Accessor<WithPlugin<T, TableMethods<T> & ColumnPinMethods>>,
+): CreateVListReturn<T, TableMethods<T> & ColumnPinMethods>;
+export function createVList<T extends VListItem = VListItem>(
+  config: Accessor<WithPlugin<T, TableMethods<T> & ColumnReorderMethods>>,
+): CreateVListReturn<T, TableMethods<T> & ColumnReorderMethods>;
+export function createVList<T extends VListItem = VListItem>(
+  config: Accessor<WithPlugin<T, TableMethods<T>>>,
+): CreateVListReturn<T, TableMethods<T>>;
 export function createVList<T extends VListItem = VListItem>(
   config: Accessor<UseVListConfig<T>>,
-): CreateVListReturn<T> {
-  return createEntry<T>(config as Parameters<typeof createEntry<T>>[0], [], fromConfig) as CreateVListReturn<T>;
+): CreateVListReturn<T>;
+export function createVList<T extends VListItem = VListItem>(
+  config: Accessor<UseVListConfig<T> | WithPlugin<T, unknown>>,
+): CreateVListReturn<T, never> {
+  return createEntry<T>(config as Parameters<typeof createEntry<T>>[0], [], fromConfig) as CreateVListReturn<T, never>;
 }

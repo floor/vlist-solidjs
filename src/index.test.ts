@@ -15,8 +15,8 @@ import type { VListFactory } from "./index";
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { render } from "solid-js/web";
 import { createSignal } from "solid-js";
-import { createVList, createVListEvent } from "./index";
-import { autosize, selection, type VListItem } from "vlist";
+import { createVList, createVListEvent, type TableColumn } from "./index";
+import { autosize, columnPin, columnReorder, selection, table, type VListItem } from "vlist";
 import type { UseVListConfig } from "./index";
 
 interface Row extends VListItem {
@@ -189,5 +189,88 @@ describe("3.1 compat: the config API on vlist/solid", () => {
     host.querySelector<HTMLElement>('[data-index="2"]')!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(clicked).toEqual(["row-2"]);
     dispose();
+  });
+
+  it("types and runs table({ features: [columnPin(), columnReorder()] }) without casts", async () => {
+    interface TableRow extends VListItem {
+      id: string;
+      name: string;
+      role: string;
+    }
+    const columns: TableColumn<TableRow>[] = [
+      { key: "name", label: "Name", width: 150 },
+      { key: "role", label: "Role", width: 100 },
+    ];
+    const tableRows: TableRow[] = [
+      { id: "1", name: "Ada", role: "Engineer" },
+      { id: "2", name: "Grace", role: "Architect" },
+    ];
+
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    let orderAfterMove: string[] = [];
+    let pinsAfterPin: Record<string, "left" | "right"> = {};
+
+    const dispose = render(() => {
+      const div = document.createElement("div") as HTMLDivElement;
+      const { setRef, instance } = createVList(() => ({
+        items: tableRows,
+        item: { height: 40, template: (r) => r.name },
+        plugins: [
+          table({
+            columns,
+            rowHeight: 40,
+            features: [columnPin(), columnReorder()],
+          }),
+        ],
+      }));
+      setRef(div);
+      div.addEventListener("click", () => {
+        const list = instance()!;
+        list.moveColumn("role", 0);
+        orderAfterMove = list.getColumnOrder();
+        list.setColumnPin("name", "left");
+        pinsAfterPin = list.getColumnPins();
+      });
+
+      const verifyExplicit = () => {
+        const explicit = createVList<TableRow>(() => ({
+          items: tableRows,
+          item: { height: 40, template: (r) => r.name },
+          plugins: [
+            table<TableRow>({
+              columns,
+              rowHeight: 40,
+              features: [columnPin(), columnReorder()],
+            }),
+          ],
+        }));
+        explicit.instance()?.setColumnPin("name", "right");
+        explicit.instance()?.moveColumn("name", 1);
+
+        const pinOnly = createVList<TableRow>(() => ({
+          items: tableRows,
+          item: { height: 40, template: (r) => r.name },
+          plugins: [table<TableRow>({ columns, rowHeight: 40, features: [columnPin()] })],
+        }));
+        pinOnly.instance()?.setColumnPin("name", "left");
+        // @ts-expect-error columnReorder() was not configured on pinOnly
+        pinOnly.instance()?.moveColumn("role", 0);
+      };
+      void verifyExplicit;
+
+      return div;
+    }, host);
+
+    try {
+      await flush();
+      host.firstElementChild!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(orderAfterMove).toEqual(["role", "name"]);
+      expect(pinsAfterPin).toEqual({ name: "left" });
+      expect(host.querySelector(".vlist-table-header-cell--pin-left")).not.toBeNull();
+    } finally {
+      dispose();
+      host.remove();
+    }
   });
 });
